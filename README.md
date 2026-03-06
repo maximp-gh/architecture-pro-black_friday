@@ -1,18 +1,16 @@
-# pymongo-api
+# Задания 1, 5,6. Diagrams
 
-## Как запустить
+Финальная диаграмма находится по пути *diagrams/CDN.drawio*.
+Промежуточные диаграммы там же.
 
-Запускаем mongodb и приложение
 
-```shell
-docker compose up -d
-```
+# Задания 1 - 6. pymongo-api
 
-Заполняем mongodb данными
 
-```shell
-./scripts/mongo-init.sh
-```
+## Как запустить финальную версию
+
+ - Перейдите в папку mongo-sharding-repl-cache
+ - Следуйте инструкциям ReadMe.md в этой папке
 
 ## Как проверить
 
@@ -33,3 +31,8 @@ curl --silent http://ifconfig.me
 ## Доступные эндпоинты
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+
+
+# Задания 7 - 10.
+
+См. файл "Solution Architecture.md"
