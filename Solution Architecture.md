@@ -9,13 +9,13 @@
 
 ```json
 {
-    "_id": {"type": "ObjectId", "descripttion": "Уникальный идентификатор заказа"},
-    "customer_id": {"type": "ObjectId", "descripttion": "Идентификатор владельца или сессии заказа"},
-    "created_at": {"type": "Date", "descripttion": "дата создания"},
-    "product_list": { "type": "array", "descripttion": "список product_id в заказе c name, price , quantity"},
-    "order_status": {"type": "string", "descripttion": "статус заказа"},
-    "order_totalprice": {"type": "Decimal", "descripttion": "общая стоимость заказа"},
-    "order_geozone": {"type": "string", "descripttion": "Геозона заказа"},
+    "_id": {"type": "ObjectId", "description": "Уникальный идентификатор заказа"},
+    "customer_id": {"type": "ObjectId", "description": "Идентификатор владельца или сессии заказа"},
+    "created_at": {"type": "Date", "description": "дата создания"},
+    "product_list": { "type": "array", "description": "список product_id в заказе c name, price , quantity"},
+    "order_status": {"type": "string", "description": "статус заказа"},
+    "order_totalprice": {"type": "Decimal", "description": "общая стоимость заказа"},
+    "order_geozone": {"type": "string", "description": "Геозона заказа"},
 }
 ```
 
@@ -34,12 +34,12 @@
 #### Примерная схема:
 
 ```json
-"_id": {"type": "ObjectId", "descripttion": "Уникальный идентификатор продукта"},
-"name": {"type": "string", "descripttion": "название продукта"},
-"category": {"type": "string", "descripttion": "Категория, например Электроника"},
-"price": { "type": "Decimal", "descripttion": "цена"},
-"amount_per_geozone": {"type": "array", "descripttion": "список кол-ва по геозонам"},
-"details": {"type": "Object", "descripttion": "детали продукта - цвет, размер, и т.д."},
+"_id": {"type": "ObjectId", "description": "Уникальный идентификатор продукта"},
+"name": {"type": "string", "description": "название продукта"},
+"category": {"type": "string", "description": "Категория, например Электроника"},
+"price": { "type": "Decimal", "description": "цена"},
+"amount_per_geozone": {"type": "array", "description": "список кол-ва по геозонам"},
+"details": {"type": "Object", "description": "детали продукта - цвет, размер, и т.д."},
 ```
 
 #### Индексы:
@@ -58,13 +58,13 @@
 
 ```json
 {
-    "_id": {"type": "ObjectId", "descripttion": "Уникальный идентификатор корзины"},
-    "customer_id": {"type": "ObjectId", "descripttion": "референс на владельца корзины"},
-    "product_list": { "type": "array", "descripttion": "список product_id в корзине c ценой и кол-вом"},
-    "status": {"type": "string", "descripttion": "aктивный, оплаченый, отмененный"},
-    "created_at": {"type": "Date", "descripttion": "дата создания"},
-    "updated_at": {"type": "Date", "descripttion": "дата обновления"},
-    "expires_at": {"type": "Date", "descripttion": "время для автоматического удаления"},
+    "_id": {"type": "ObjectId", "description": "Уникальный идентификатор корзины"},
+    "customer_id": {"type": "ObjectId", "description": "референс на владельца корзины"},
+    "product_list": { "type": "array", "description": "список product_id в корзине c ценой и кол-вом"},
+    "status": {"type": "string", "description": "aктивный, оплаченый, отмененный"},
+    "created_at": {"type": "Date", "description": "дата создания"},
+    "updated_at": {"type": "Date", "description": "дата обновления"},
+    "expires_at": {"type": "Date", "description": "время для автоматического удаления"},
 }
 ```
 
@@ -132,7 +132,7 @@
 | История заказов | SECONDARY |
 | Отображение статуса заказов| PRIMARY |
 
-Допустимая задержа репликации: минуты. Попадание нового заказа в историю не выглядит критичной ко времени.
+Допустимая задержа репликации: секунды. Попадание нового заказа в историю не выглядит критичной ко времени.
 
 Статус заказа критичен для пользователя и должен читаться с мастера.
 
@@ -162,4 +162,69 @@
 
 ### <a name="_b7urdng99y53"></a>**Название задачи:** Задание 10 - Cassandra
 ### <a name="_hjk0fkfyohdk"></a>**Автор:** Полесин Максим
-### <a name="_uanumrh8zrui"></a>**Дата:** 01.03.2026
+### <a name="_uanumrh8zrui"></a>**Дата:** 06.03.2026
+
+#### 10.1
+1. Критически важными с точки зрения целостности являются заказы и остатки продуктов.
+Корзина и пользовательские сессии менее критичны и можно повысить приоритет их доступности и скорости обработки. 
+Создание заказа и его оплата критичны и должны быть точными. Поэтому информация о доступном кол-ве товара и его цене, а также о статусе заказа должна быть консистентной.
+
+
+2. Применение Cassandra имеет смысл для истории заказов. Это большой объем данных. Значительные перераспределения этого объема информации между шардами во время "черной пятницы" нежелательны. Cassandra не перераспределяет данные автоматически между имеющимися шардами. Виртуальные ноды (vnodes) Cassandra помогут минимизировать объем данных для перераспределения даже при добавлении новых шардов во время активных периодов.
+
+
+#### 10.2
+Рассмотрим "orders" из MongoDB 
+
+В Cassandra это будет выглядеть так:
+
+```sql
+CREATE TABLE orders_by_user (
+    order_id UUID,
+    customer_id UUID,
+    created_at TIMESTAMP,
+    product_list TEXT, -- описание всех товаров на момент покупки
+    order_totalprice DECIMAL,
+    order_geozone TEXT
+    PRIMARY KEY ((customer_id), created_at)
+) WITH CLUSTERING ORDER BY (created_at DESC);
+```
+
+При переходе на Cassandra
+PartitionKey = customer_id
+ClusteringKey = created_at
+
+Таким образом все заказы одного пользователя будут попадать на один узел. И будет быстрой сортировка по времени.
+
+При большом кол-ве пользователей и хэшировании customer_id вероятность перегрева отдельного узла невысока - это должны быть какие-то мегапользователи по числу заказов.
+
+Для продуктов выбираем шардирование по id и кластеризацию по геозоне.
+Шардирование по id обеспечит большую равномерность и предотвратит перегрев при частых заказах отдельных продуктов или их категорий.
+
+```sql
+CREATE TABLE products (
+    product_id UUID,
+    product_name TEXT,
+    category TEXT,
+    price DECIMAL,
+    geozone TEXT
+    amount INT
+    details TEXT
+    PRIMARY KEY (product_id, geo_zone)
+) WITH CLUSTERING ORDER BY (geo_zone ASC);
+```
+
+
+
+#### 10.3
+
+-  Anti-Entropy Repair. Эта стратегия используется при длительном выходе из строя какой-то ноды и в этом случае будет использоваться для любых сущностей , распределенных по нодам кластера. Выполнять вне активных часов (точно не во время, "черной пятницы").
+
+
+ - Hinted handoff хорошо подойдут редко читаемым данным, где например, Read Repair может не вызваться вовремя.
+ Однако можно рассмотреть сценарий отключения этой опции во время условной "черной пятницы" для увеличения скорости записи заказов. Лучше потерять несколько заказов, чем перегрузить всю систему и простаивать длительное время. Отметим, что в Cassandra Hinted handoffs либо включены, либо выключены для всех сущностей.
+
+
+ - Read Repair хорошо подходит к часто читаемым данным для улучшения их консистентности. Например к остаткам продуктов (products).
+ При изменении данных какого-либо продукта Read Repair заблокирует чтение до тех пор, пока определенное кол-во узлов не ответит. Это способствует выполнению ожидания монотонности чтений (чем позже читаем, тем новее данные). 
+ Таким образом эту стратегию стоит применять к активным заказам, которые меняют свой статус достаточно часто (например оплачен/не оплачен).

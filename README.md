@@ -1,18 +1,9 @@
-# pymongo-api
+# Задания 1 - 6. pymongo-api
 
-## Как запустить
+## Как запустить финальную версию
 
-Запускаем mongodb и приложение
-
-```shell
-docker compose up -d
-```
-
-Заполняем mongodb данными
-
-```shell
-./scripts/mongo-init.sh
-```
+ - Перейдите в папку mongo-sharding-repl-cache
+ - Следуйте инструкциям ReadMe.md в этой папке
 
 ## Как проверить
 
@@ -33,3 +24,8 @@ curl --silent http://ifconfig.me
 ## Доступные эндпоинты
 
 Список доступных эндпоинтов, swagger http://<ip виртуальной машины>:8080/docs
+
+
+# Задания 7 - 10.
+
+См. файл "Solution Architecture.md"
